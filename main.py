@@ -8,6 +8,9 @@ Micropython code for interfacing with a 2x16 LCD over i2c to show speeduino para
 Pin numbers match up with PICO W diagram. 
 """
 
+# Test mode is for simulating data - this means you don't need a physical connection to a real speeduino.
+TEST_MODE=False
+
 I2C_SDA_PIN = 26 # real pin:
 I2C_SCL_PIN = 27 # real pin:
 BUTTON_PIN = 12 # real pin:
@@ -21,17 +24,24 @@ RETRY_AMOUNT = 3
 READ_COMMAND = 'A'
 RESPONSE_BYTES = 76
 SPARK_STATUS_LKUP = {0: "launchHard", 1: "launchSoft", 2:"hardLimitOn", 3:"softLimitOn", 4:"boostCutSpark", 5:"error", 6:"idleControlOn", 7:"sync",}
-# Test mode is for simulating data from an "engine" - this means you don't need a physical connection to a real speeduino.
-TEST_MODE=False
+
+
+class FakeLCD:
+    def putstr(self, out):
+        print(out)
+    def clear(self):
+        pass
 
 # Set up UART for speeduino comms
 uart = machine.UART(0, 115200, tx=machine.Pin(UART_TX_PIN), rx=machine.Pin(UART_RX_PIN))
 
 # Set up I2C for LCD comms
-i2c = machine.I2C(1, sda=machine.Pin(I2C_SDA_PIN), scl=machine.Pin(I2C_SCL_PIN), freq=400000)
-I2C_ADDR = i2c.scan()[0]
-lcd = I2cLcd(i2c, I2C_ADDR, 2, 16)
-
+if not TEST_MODE:
+    i2c = machine.I2C(1, sda=machine.Pin(I2C_SDA_PIN), scl=machine.Pin(I2C_SCL_PIN), freq=400000)
+    I2C_ADDR = i2c.scan()[0]
+    lcd = I2cLcd(i2c, I2C_ADDR, 2, 16)
+else:
+    lcd = FakeLCD()
 # Set up the button for toggling pages
 
 button = machine.Pin(BUTTON_PIN, machine.Pin.IN, machine.Pin.PULL_UP)
@@ -49,9 +59,9 @@ def try_rx(uart):
         params[10] = 12 # batter voltage
         params[1] = 1 # incr comms num
         params[24] = 0 # spark advance
-        params[32] = SPARK_STATUS_LKUP[7] # spark status
+        params[32] = 7 # spark status
         
-        return bytearray(params)
+        return params
     else:
         uart.write(READ_COMMAND)
         while uart.any() < RESPONSE_BYTES:
