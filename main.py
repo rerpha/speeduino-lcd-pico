@@ -11,11 +11,11 @@ Pin numbers match up with PICO W diagram.
 # Test mode is for simulating data - this means you don't need a physical connection to a real speeduino.
 TEST_MODE=False
 
-I2C_SDA_PIN = 26 # real pin:
-I2C_SCL_PIN = 27 # real pin:
-BUTTON_PIN = 12 # real pin:
-UART_TX_PIN = 0 # real pin:
-UART_RX_PIN = 1 # real pin:
+I2C_SDA_PIN = 26
+I2C_SCL_PIN = 27
+BUTTON_PIN = 8
+UART_TX_PIN = 0
+UART_RX_PIN = 1
 
 CALIBRATION_OFFSET = 40
 POLL_MS = 50
