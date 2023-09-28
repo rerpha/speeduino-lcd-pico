@@ -9,7 +9,7 @@ Pin numbers match up with PICO W diagram.
 """
 
 # Test mode is for simulating data - this means you don't need a physical connection to a real speeduino.
-TEST_MODE=True
+TEST_MODE=False
 FAKE_LCD=False
 I2C_SDA_PIN = 26
 I2C_SCL_PIN = 27
@@ -18,7 +18,7 @@ UART_TX_PIN = 0
 UART_RX_PIN = 1
 
 CALIBRATION_OFFSET = 40
-POLL_MS = 500
+POLL_MS = 200
 TIMEOUT_MS = 999
 RETRY_AMOUNT = 3
 READ_COMMAND = 'A'
@@ -47,7 +47,7 @@ else:
 button = machine.Pin(BUTTON_PIN, machine.Pin.IN, machine.Pin.PULL_UP)
 DEFAULT_PAGE = 1
 page = DEFAULT_PAGE
-
+MAX_PAGE_NUM = 3
 def try_rx(uart):
     if TEST_MODE:
         params = [0] * RESPONSE_BYTES
@@ -67,14 +67,14 @@ def try_rx(uart):
         while uart.any() < RESPONSE_BYTES:
             for i in range(RETRY_AMOUNT):
                 start = ticks_ms()
-                sleep_ms(TIMEOUT_MS/RETRY_AMOUNT)
+                sleep_ms(int(TIMEOUT_MS/RETRY_AMOUNT))
                 uart.write(READ_COMMAND)
             # Timed out
             return None
         return uart.read()
 
 while True:
-    if not button.value():
+    if button.value() == 0:
         page += 1
     
     res = try_rx(uart)
@@ -82,6 +82,7 @@ while True:
     if res is None:
         lcd.clear()
         lcd.putstr("Timeout")
+        break
     
     # As the speedy sends back the command first, the byte you read is +1 what it says in the manual
     coolant_temp = res[8]-CALIBRATION_OFFSET
@@ -93,8 +94,10 @@ while True:
     spark_status_raw = res[32]
     spark_status = SPARK_STATUS_LKUP[spark_status_raw]
     lcd.clear()
+    if page > MAX_PAGE_NUM:
+        page = 1
     if page == 1:
-        lcd.putstr(f"CLT:{coolant_temp}°C       \nRPM:{rpm}       \n")
+        lcd.putstr(f"CLT:{coolant_temp}°C       \n RPM:{rpm}       ")
     elif page == 2:
         lcd.putstr(f"SPKADV:{spark_advance}     \nSPKST:{spark_status}")
     elif page == 3:
