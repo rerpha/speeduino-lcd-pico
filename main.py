@@ -9,8 +9,8 @@ Pin numbers match up with PICO W diagram.
 """
 
 # Test mode is for simulating data - this means you don't need a physical connection to a real speeduino.
-TEST_MODE=False
-
+TEST_MODE=True
+FAKE_LCD=False
 I2C_SDA_PIN = 26
 I2C_SCL_PIN = 27
 BUTTON_PIN = 8
@@ -18,7 +18,7 @@ UART_TX_PIN = 0
 UART_RX_PIN = 1
 
 CALIBRATION_OFFSET = 40
-POLL_MS = 50
+POLL_MS = 500
 TIMEOUT_MS = 999
 RETRY_AMOUNT = 3
 READ_COMMAND = 'A'
@@ -36,7 +36,7 @@ class FakeLCD:
 uart = machine.UART(0, 115200, tx=machine.Pin(UART_TX_PIN), rx=machine.Pin(UART_RX_PIN))
 
 # Set up I2C for LCD comms
-if not TEST_MODE:
+if not FAKE_LCD:
     i2c = machine.I2C(1, sda=machine.Pin(I2C_SDA_PIN), scl=machine.Pin(I2C_SCL_PIN), freq=400000)
     I2C_ADDR = i2c.scan()[0]
     lcd = I2cLcd(i2c, I2C_ADDR, 2, 16)
@@ -78,8 +78,9 @@ while True:
         page += 1
     
     res = try_rx(uart)
-    lcd.clear()
+    
     if res is None:
+        lcd.clear()
         lcd.putstr("Timeout")
     
     # As the speedy sends back the command first, the byte you read is +1 what it says in the manual
@@ -91,7 +92,7 @@ while True:
     spark_advance = res[24]
     spark_status_raw = res[32]
     spark_status = SPARK_STATUS_LKUP[spark_status_raw]
-
+    lcd.clear()
     if page == 1:
         lcd.putstr(f"CLT:{coolant_temp}°C       \nRPM:{rpm}       \n")
     elif page == 2:
