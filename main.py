@@ -50,6 +50,7 @@ page = DEFAULT_PAGE
 MAX_PAGE_NUM = 3
 def try_rx(uart):
     if TEST_MODE:
+        # respond with some dummy data instead of trying to read real serial i/o
         params = [0] * RESPONSE_BYTES
         params[8] = 35 # coolant
 
@@ -95,6 +96,7 @@ while True:
     spark_status = SPARK_STATUS_LKUP[spark_status_raw]
     lcd.clear()
     if page > MAX_PAGE_NUM:
+        # We have reached the maximum amount of pages, so loop back to page 1.
         page = 1
     if page == 1:
         lcd.putstr(f"CLT:{coolant_temp}°C       \n RPM:{rpm}       ")
