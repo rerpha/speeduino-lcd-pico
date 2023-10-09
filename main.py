@@ -10,7 +10,10 @@ Pin numbers match up with PICO W diagram.
 
 # Test mode is for simulating data - this means you don't need a physical connection to a real speeduino.
 TEST_MODE=False
+# Fake the LCD and just print instead, in case you haven't connected a display yet
 FAKE_LCD=False
+
+# Pins
 I2C_SDA_PIN = 26
 I2C_SCL_PIN = 27
 BUTTON_PIN = 8
@@ -42,12 +45,13 @@ if not FAKE_LCD:
     lcd = I2cLcd(i2c, I2C_ADDR, 2, 16)
 else:
     lcd = FakeLCD()
-# Set up the button for toggling pages
 
+# Set up the button for toggling pages
 button = machine.Pin(BUTTON_PIN, machine.Pin.IN, machine.Pin.PULL_UP)
 DEFAULT_PAGE = 1
 page = DEFAULT_PAGE
 MAX_PAGE_NUM = 3
+
 def try_rx(uart):
     if TEST_MODE:
         # respond with some dummy data instead of trying to read real serial i/o
@@ -75,6 +79,9 @@ def try_rx(uart):
         return uart.read()
 
 while True:
+    # If button pressed, increment page number. this is a bit finnicky and might require you to hold the button,
+    # as it only checks every poll cycle - should probably make the polling do something like the retry behaviour 
+    # and just skip polling if poll period not reached, that way this button could be pressed any time.
     if button.value() == 0:
         page += 1
     
